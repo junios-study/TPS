@@ -4,6 +4,7 @@
 #include "Sample/GameplayAbility_Bigger.h"
 #include "GameplayTagContainer.h"
 #include "Abilities/Tasks/AbilityTask_WaitDelay.h"
+#include "GameplayAbility_ComboAttack.h"
 
 
 UGameplayAbility_Bigger::UGameplayAbility_Bigger()

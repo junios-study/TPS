@@ -59,6 +59,10 @@ public:
 	/** Constructor */
 	ATPSCharacter();	
 
+	/** AnimMontage that will play for combo attacks */
+	UPROPERTY(EditAnywhere, Category = "Melee Attack|Combo")
+	UAnimMontage* ComboAttackMontage;
+
 protected:
 
 	/** Initialize input action bindings */
