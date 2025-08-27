@@ -163,7 +163,6 @@ void ATPSCharacter::PossessedBy(AController* NewController)
 				FGameplayAbilitySpec Spec(InputAbilityClass.Value);
 				Spec.InputID = InputAbilityClass.Key;
 				ASC->GiveAbility(Spec);
-				UE_LOG(LogTemp, Warning, TEXT("InputAbilityClass"));
 			}
 
 			APlayerController* PC = Cast<APlayerController>(NewController);
@@ -180,8 +179,6 @@ void ATPSCharacter::SetupGASInputComponent()
 	{
 		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("SetupGASInputComponent"));
-
 			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ATPSCharacter::InputPressed, 0);
 			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ATPSCharacter::InputReleased, 0);
 
@@ -222,23 +219,61 @@ void ATPSCharacter::InputReleased(int32 InputID)
 
 void ATPSCharacter::DoAttackTrace(FName DamageSourceBone)
 {
+	// sweep for objects in front of the character to be hit by the attack
+	TArray<FHitResult> OutHits;
+
+	// start at the provided socket location, sweep forward
+	const FVector TraceStart = GetMesh()->GetSocketLocation(DamageSourceBone);
+	const FVector TraceEnd = TraceStart + (GetActorForwardVector() * MeleeTraceDistance);
+
+	// check for pawn and world dynamic collision object types
+	FCollisionObjectQueryParams ObjectParams;
+	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
+	ObjectParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+
+	// use a sphere shape for the sweep
+	FCollisionShape CollisionShape;
+	CollisionShape.SetSphere(MeleeTraceRadius);
+
+	// ignore self
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	if (GetWorld()->SweepMultiByObjectType(OutHits, TraceStart, TraceEnd, FQuat::Identity, ObjectParams, CollisionShape, QueryParams))
+	{
+		// iterate over each object hit
+		for (const FHitResult& CurrentHit : OutHits)
+		{
+			// check if we've hit a damageable actor
+			ICombatDamageable* Damageable = Cast<ICombatDamageable>(CurrentHit.GetActor());
+
+			if (Damageable)
+			{
+				// knock upwards and away from the impact normal
+				const FVector Impulse = (CurrentHit.ImpactNormal * -MeleeKnockbackImpulse) + (FVector::UpVector * MeleeLaunchImpulse);
+
+				// pass the damage event to the actor
+				Damageable->ApplyDamage(MeleeDamage, this, CurrentHit.ImpactPoint, Impulse);
+
+				// call the BP handler to play effects, etc.
+//				DealtDamage(MeleeDamage, CurrentHit.ImpactPoint);
+			}
+		}
+	}
 }
 
 //AnimNotify가 실행 시켜줌(ICombatAttacker)
 void ATPSCharacter::CheckCombo()
 {
-	UE_LOG(LogTemp, Display, TEXT("CheckCombo 1 %d"), bIsAttacking);
 	if (bIsAttacking)
 	{
 		if (GetWorld()->GetTimeSeconds() - CachedAttackInputTime <= ComboInputCacheTimeTolerance)
 		{
-			UE_LOG(LogTemp, Display, TEXT("CheckCombo 2"));
 			CachedAttackInputTime = 0.0f;
 			++ComboCount;
 
 			if (ComboCount < ComboSectionNames.Num())
 			{
-				UE_LOG(LogTemp, Display, TEXT("CheckCombo 3"));
 				//GameplayAbility_ComboAttack, 아래 기능 추가(CheckCombo)
 				//GameplayAbility_ComboAttack 이미 생성 된거임(전제), 입력 했으니깐
 				//현재 실행 중인 GameplayAbility_ComboAttack 인스턴스를 찾아서 호출 해줘야 됨
@@ -249,7 +284,6 @@ void ATPSCharacter::CheckCombo()
 					UGameplayAbility_ComboAttack* Ability = Cast<UGameplayAbility_ComboAttack>(Instance);
 					if (IsValid(Ability))
 					{
-						UE_LOG(LogTemp, Display, TEXT("CheckCombo 4"));
 						Ability->JumpToSection();
 					}
 				}

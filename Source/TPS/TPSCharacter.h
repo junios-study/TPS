@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "CombatAttacker.h"
+#include "CombatDamageable.h"
 #include "Logging/LogMacros.h"
 #include "TPSCharacter.generated.h"
 

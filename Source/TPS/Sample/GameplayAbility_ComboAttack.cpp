@@ -14,14 +14,10 @@ UGameplayAbility_ComboAttack::UGameplayAbility_ComboAttack()
 void UGameplayAbility_ComboAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-	UE_LOG(LogTemp, Warning, TEXT("UGameplayAbility_ComboAttack::ActivateAbility"));
-
 }
 
 void UGameplayAbility_ComboAttack::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-	UE_LOG(LogTemp, Warning, TEXT("UGameplayAbility_ComboAttack::EndAbility"));
-
 	ATPSCharacter* Character = Cast<ATPSCharacter>(CurrentActorInfo->AvatarActor.Get());
 
 	if (IsValid(Character))
@@ -93,8 +89,6 @@ void UGameplayAbility_ComboAttack::JumpToSection()
 
 		if (IsValid(Character))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("MontageJumpToSection"));
-
 			MontageJumpToSection(Character->ComboSectionNames[Character->ComboCount]);
 		}
 	}
