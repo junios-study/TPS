@@ -164,6 +164,9 @@ void ATPSCharacter::PossessedBy(AController* NewController)
 				ASC->GiveAbility(Spec);
 				UE_LOG(LogTemp, Warning, TEXT("InputAbilityClass"));
 			}
+
+			APlayerController* PC = Cast<APlayerController>(NewController);
+			PC->ConsoleCommand(TEXT("ShowDebug AbilitySystem"), true);
 		}
 	}
 
@@ -203,7 +206,6 @@ void ATPSCharacter::InputPressed(int32 InputID)
 			FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromInputID(InputID);
 			if (Spec)
 			{
-				Spec->InputPressed = true;
 				if (ASC->IsActive())
 				{
 					ASC->AbilitySpecInputPressed(*Spec);
