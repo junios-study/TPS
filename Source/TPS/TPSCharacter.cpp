@@ -186,42 +186,36 @@ void ATPSCharacter::SetupGASInputComponent()
 			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ATPSCharacter::InputReleased, 0);
 
 			EnhancedInputComponent->BindAction(ComboAttackAction, ETriggerEvent::Triggered, this, &ATPSCharacter::InputPressed, 1);
+			EnhancedInputComponent->BindAction(ComboAttackAction, ETriggerEvent::Triggered, this, &ATPSCharacter::InputReleased, 1);
 		}
 	}
 }
 
 void ATPSCharacter::InputPressed(int32 InputID)
 {
-	if (IsValid(ASC) && IsValid(InputComponent))
+	FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromInputID(InputID);
+	if (Spec)
 	{
-		FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromInputID(InputID);
-		if (Spec)
+		if (Spec->IsActive())
 		{
-			if (ASC->IsActive())
-			{
-				ASC->AbilitySpecInputPressed(*Spec);
-			}
-			else
-			{
-				ASC->TryActivateAbility(Spec->Handle);
-			}
+			ASC->AbilitySpecInputPressed(*Spec);
+		}
+		else
+		{
+			ASC->TryActivateAbility(Spec->Handle);
 		}
 	}
-
 }
 
 void ATPSCharacter::InputReleased(int32 InputID)
 {
-	if (IsValid(ASC) && IsValid(InputComponent))
+	FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromInputID(InputID);
+	if (Spec)
 	{
-		FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromInputID(InputID);
-		if (Spec)
+		Spec->InputPressed = false;
+		if (Spec->IsActive())
 		{
-			Spec->InputPressed = false;
-			if (Spec->IsActive())
-			{
-				ASC->AbilitySpecInputReleased(*Spec);
-			}
+			ASC->AbilitySpecInputReleased(*Spec);
 		}
 	}
 }
@@ -233,15 +227,18 @@ void ATPSCharacter::DoAttackTrace(FName DamageSourceBone)
 //AnimNotify가 실행 시켜줌(ICombatAttacker)
 void ATPSCharacter::CheckCombo()
 {
+	UE_LOG(LogTemp, Display, TEXT("CheckCombo 1 %d"), bIsAttacking);
 	if (bIsAttacking)
 	{
 		if (GetWorld()->GetTimeSeconds() - CachedAttackInputTime <= ComboInputCacheTimeTolerance)
 		{
+			UE_LOG(LogTemp, Display, TEXT("CheckCombo 2"));
 			CachedAttackInputTime = 0.0f;
 			++ComboCount;
 
 			if (ComboCount < ComboSectionNames.Num())
 			{
+				UE_LOG(LogTemp, Display, TEXT("CheckCombo 3"));
 				//GameplayAbility_ComboAttack, 아래 기능 추가(CheckCombo)
 				//GameplayAbility_ComboAttack 이미 생성 된거임(전제), 입력 했으니깐
 				//현재 실행 중인 GameplayAbility_ComboAttack 인스턴스를 찾아서 호출 해줘야 됨
@@ -252,6 +249,7 @@ void ATPSCharacter::CheckCombo()
 					UGameplayAbility_ComboAttack* Ability = Cast<UGameplayAbility_ComboAttack>(Instance);
 					if (IsValid(Ability))
 					{
+						UE_LOG(LogTemp, Display, TEXT("CheckCombo 4"));
 						Ability->JumpToSection();
 					}
 				}

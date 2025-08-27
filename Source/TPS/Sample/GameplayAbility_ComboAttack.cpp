@@ -14,10 +14,21 @@ UGameplayAbility_ComboAttack::UGameplayAbility_ComboAttack()
 void UGameplayAbility_ComboAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+	UE_LOG(LogTemp, Warning, TEXT("UGameplayAbility_ComboAttack::ActivateAbility"));
+
 }
 
 void UGameplayAbility_ComboAttack::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
+	UE_LOG(LogTemp, Warning, TEXT("UGameplayAbility_ComboAttack::EndAbility"));
+
+	ATPSCharacter* Character = Cast<ATPSCharacter>(CurrentActorInfo->AvatarActor.Get());
+
+	if (IsValid(Character))
+	{
+		Character->bIsAttacking = false;
+	}
+
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
@@ -29,11 +40,12 @@ void UGameplayAbility_ComboAttack::ComboAttack(ATPSCharacter* Character)
 		Character->bIsAttacking = true;
 		Character->ComboCount = 0;
 
-		UE_LOG(LogTemp, Warning, TEXT("UGameplayAbility_ComboAttack"));
 		UAbilityTask_PlayMontageAndWait* Task = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
 			this,
 			TEXT("ComboAttack"),
-			Character->ComboAttackMontage
+			Character->ComboAttackMontage,
+			1.0f,
+			Character->ComboSectionNames[Character->ComboCount]
 		);
 
 		Task->OnCompleted.AddDynamic(this, &UGameplayAbility_ComboAttack::OnCompleted);
@@ -48,15 +60,12 @@ void UGameplayAbility_ComboAttack::InputPressed(const FGameplayAbilitySpecHandle
 
 	if (IsValid(Character))
 	{
-		// are we already playing an attack animation?
 		if (Character->bIsAttacking)
 		{
-			// cache the input time so we can check it later
 			Character->CachedAttackInputTime = GetWorld()->GetTimeSeconds();
 		}
 		else
 		{
-			// perform a combo attack
 			ComboAttack(Character);
 		}
 	}
@@ -68,12 +77,12 @@ void UGameplayAbility_ComboAttack::InputReleased(const FGameplayAbilitySpecHandl
 
 void UGameplayAbility_ComboAttack::OnCompleted()
 {
-	Super::EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 void UGameplayAbility_ComboAttack::OnInterrupted()
 {
-	Super::EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 }
 
 void UGameplayAbility_ComboAttack::JumpToSection()
@@ -84,6 +93,8 @@ void UGameplayAbility_ComboAttack::JumpToSection()
 
 		if (IsValid(Character))
 		{
+			UE_LOG(LogTemp, Warning, TEXT("MontageJumpToSection"));
+
 			MontageJumpToSection(Character->ComboSectionNames[Character->ComboCount]);
 		}
 	}
