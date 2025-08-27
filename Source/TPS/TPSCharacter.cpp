@@ -13,6 +13,7 @@
 #include "TPS.h"
 #include "Sample/TPSPlayerState.h"
 #include "AbilitySystemComponent.h"
+#include "Sample/GameplayAbility_ComboAttack.h"
 
 ATPSCharacter::ATPSCharacter()
 {
@@ -145,7 +146,7 @@ void ATPSCharacter::PossessedBy(AController* NewController)
 
 	if (IsValid(PS))
 	{
-		UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
+		ASC = PS->GetAbilitySystemComponent();
 		if (IsValid(ASC))
 		{
 			ASC->InitAbilityActorInfo(PS, this);
@@ -174,69 +175,91 @@ void ATPSCharacter::PossessedBy(AController* NewController)
 
 void ATPSCharacter::SetupGASInputComponent()
 {
-	ATPSPlayerState* PS = GetPlayerState<ATPSPlayerState>();
 
-	if (IsValid(PS))
+	if (IsValid(ASC) && IsValid(InputComponent))
 	{
-		UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
-		if (IsValid(ASC) && IsValid(InputComponent))
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent))
 		{
-			if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("SetupGASInputComponent"));
+			UE_LOG(LogTemp, Warning, TEXT("SetupGASInputComponent"));
 
-				EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ATPSCharacter::InputPressed, 0);
-				EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ATPSCharacter::InputReleased, 0);
+			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ATPSCharacter::InputPressed, 0);
+			EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ATPSCharacter::InputReleased, 0);
 
-				EnhancedInputComponent->BindAction(ComboAttackAction, ETriggerEvent::Triggered, this, &ATPSCharacter::InputPressed, 1);
-			}
+			EnhancedInputComponent->BindAction(ComboAttackAction, ETriggerEvent::Triggered, this, &ATPSCharacter::InputPressed, 1);
 		}
 	}
 }
 
 void ATPSCharacter::InputPressed(int32 InputID)
 {
-	ATPSPlayerState* PS = GetPlayerState<ATPSPlayerState>();
-
-	if (IsValid(PS))
+	if (IsValid(ASC) && IsValid(InputComponent))
 	{
-		UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
-		if (IsValid(ASC) && IsValid(InputComponent))
+		FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromInputID(InputID);
+		if (Spec)
 		{
-			FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromInputID(InputID);
-			if (Spec)
+			if (ASC->IsActive())
 			{
-				if (ASC->IsActive())
+				ASC->AbilitySpecInputPressed(*Spec);
+			}
+			else
+			{
+				ASC->TryActivateAbility(Spec->Handle);
+			}
+		}
+	}
+
+}
+
+void ATPSCharacter::InputReleased(int32 InputID)
+{
+	if (IsValid(ASC) && IsValid(InputComponent))
+	{
+		FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromInputID(InputID);
+		if (Spec)
+		{
+			Spec->InputPressed = false;
+			if (Spec->IsActive())
+			{
+				ASC->AbilitySpecInputReleased(*Spec);
+			}
+		}
+	}
+}
+
+void ATPSCharacter::DoAttackTrace(FName DamageSourceBone)
+{
+}
+
+//AnimNotify가 실행 시켜줌(ICombatAttacker)
+void ATPSCharacter::CheckCombo()
+{
+	if (bIsAttacking)
+	{
+		if (GetWorld()->GetTimeSeconds() - CachedAttackInputTime <= ComboInputCacheTimeTolerance)
+		{
+			CachedAttackInputTime = 0.0f;
+			++ComboCount;
+
+			if (ComboCount < ComboSectionNames.Num())
+			{
+				//GameplayAbility_ComboAttack, 아래 기능 추가(CheckCombo)
+				//GameplayAbility_ComboAttack 이미 생성 된거임(전제), 입력 했으니깐
+				//현재 실행 중인 GameplayAbility_ComboAttack 인스턴스를 찾아서 호출 해줘야 됨
+
+				FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromInputID(1);
+				for (UGameplayAbility* Instance : Spec->GetAbilityInstances())
 				{
-					ASC->AbilitySpecInputPressed(*Spec);
-				}
-				else
-				{
-					ASC->TryActivateAbility(Spec->Handle);
+					UGameplayAbility_ComboAttack* Ability = Cast<UGameplayAbility_ComboAttack>(Instance);
+					if (IsValid(Ability))
+					{
+						Ability->JumpToSection();
+					}
 				}
 			}
 		}
 	}
 }
 
-void ATPSCharacter::InputReleased(int32 InputID)
+void ATPSCharacter::CheckChargedAttack()
 {
-	ATPSPlayerState* PS = GetPlayerState<ATPSPlayerState>();
-
-	if (IsValid(PS))
-	{
-		UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
-		if (IsValid(ASC) && IsValid(InputComponent))
-		{
-			FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromInputID(InputID);
-			if (Spec)
-			{
-				Spec->InputPressed = false;
-				if (Spec->IsActive())
-				{
-					ASC->AbilitySpecInputReleased(*Spec);
-				}
-			}
-		}
-	}
 }

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "CombatAttacker.h"
 #include "Logging/LogMacros.h"
 #include "TPSCharacter.generated.h"
 
@@ -12,6 +13,7 @@ class UCameraComponent;
 class UInputAction;
 struct FInputActionValue;
 class UGameplayAbility;
+class UAbilitySystemComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -20,7 +22,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
  *  Implements a controllable orbiting camera
  */
 UCLASS(abstract)
-class ATPSCharacter : public ACharacter
+class ATPSCharacter : public ACharacter, public ICombatAttacker
 {
 	GENERATED_BODY()
 
@@ -116,5 +118,64 @@ public:
 	void InputPressed(int32 InputID);
 
 	void InputReleased(int32 InputID);
+
+
+	UPROPERTY(VisibleAnywhere, Category="Components")
+	UAbilitySystemComponent* ASC;
+
+
+	/** Performs an attack's collision check. Usually called from a montage's AnimNotify */
+	UFUNCTION(BlueprintCallable, Category = "Attacker")
+	virtual void DoAttackTrace(FName DamageSourceBone) override;
+
+	/** Performs a combo attack's check to continue the string. Usually called from a montage's AnimNotify */
+	UFUNCTION(BlueprintCallable, Category = "Attacker")
+	virtual void CheckCombo() override;
+
+	/** Performs a charged attack's check to loop the charge animation. Usually called from a montage's AnimNotify */
+	UFUNCTION(BlueprintCallable, Category = "Attacker")
+	virtual void CheckChargedAttack() override;
+
+
+	/** Max amount of time that may elapse for a non-combo attack input to not be considered stale */
+	UPROPERTY(EditAnywhere, Category = "Melee Attack", meta = (ClampMin = 0, ClampMax = 5, Units = "s"))
+	float AttackInputCacheTimeTolerance = 1.0f;
+
+	/** Time at which an attack button was last pressed */
+	float CachedAttackInputTime = 0.0f;
+
+	/** If true, the character is currently playing an attack animation */
+	bool bIsAttacking = false;
+
+	/** Distance ahead of the character that melee attack sphere collision traces will extend */
+	UPROPERTY(EditAnywhere, Category = "Melee Attack|Trace", meta = (ClampMin = 0, ClampMax = 500, Units = "cm"))
+	float MeleeTraceDistance = 75.0f;
+
+	/** Radius of the sphere trace for melee attacks */
+	UPROPERTY(EditAnywhere, Category = "Melee Attack|Trace", meta = (ClampMin = 0, ClampMax = 200, Units = "cm"))
+	float MeleeTraceRadius = 75.0f;
+
+	/** Amount of damage a melee attack will deal */
+	UPROPERTY(EditAnywhere, Category = "Melee Attack|Damage", meta = (ClampMin = 0, ClampMax = 100))
+	float MeleeDamage = 1.0f;
+
+	/** Amount of knockback impulse a melee attack will apply */
+	UPROPERTY(EditAnywhere, Category = "Melee Attack|Damage", meta = (ClampMin = 0, ClampMax = 1000, Units = "cm/s"))
+	float MeleeKnockbackImpulse = 250.0f;
+
+	/** Amount of upwards impulse a melee attack will apply */
+	UPROPERTY(EditAnywhere, Category = "Melee Attack|Damage", meta = (ClampMin = 0, ClampMax = 1000, Units = "cm/s"))
+	float MeleeLaunchImpulse = 300.0f;
+
+	/** Names of the AnimMontage sections that correspond to each stage of the combo attack */
+	UPROPERTY(EditAnywhere, Category = "Melee Attack|Combo")
+	TArray<FName> ComboSectionNames;
+
+	/** Max amount of time that may elapse for a combo attack input to not be considered stale */
+	UPROPERTY(EditAnywhere, Category = "Melee Attack|Combo", meta = (ClampMin = 0, ClampMax = 5, Units = "s"))
+	float ComboInputCacheTimeTolerance = 0.45f;
+
+	/** Index of the current stage of the melee attack combo */
+	int32 ComboCount = 0;
 };
 
