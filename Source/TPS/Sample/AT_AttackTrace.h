@@ -23,6 +23,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Ability|Tasks", meta = (DisplayName = "AttackTrace", HidePin = "OwningAbility", DefaultToSelf = "OwningAbility", BlueprintInternalUseOnly = "TRUE"))
 	static UAT_AttackTrace* CreateTask(UGameplayAbility* OwingAbility, TSubclassOf<class AGATA_AttackTrace> TargetActorClass);
 
-	TSubclassOf<class UGATA_AttackTrace> TargetActorClass;
+	TSubclassOf<class AGATA_AttackTrace> TargetActorClass;
 
 };

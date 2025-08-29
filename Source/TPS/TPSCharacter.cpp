@@ -14,6 +14,8 @@
 #include "Sample/TPSPlayerState.h"
 #include "AbilitySystemComponent.h"
 #include "Sample/GameplayAbility_ComboAttack.h"
+#include "AbilitySystemBlueprintLibrary.h"
+
 
 ATPSCharacter::ATPSCharacter()
 {
@@ -217,49 +219,14 @@ void ATPSCharacter::InputReleased(int32 InputID)
 	}
 }
 
-void ATPSCharacter::DoAttackTrace(FName DamageSourceBone)
+void ATPSCharacter::DoAttackTrace(FName InDamageSourceBone)
 {
-	// sweep for objects in front of the character to be hit by the attack
-	TArray<FHitResult> OutHits;
+	DamageSourceBone = InDamageSourceBone;
 
-	// start at the provided socket location, sweep forward
-	const FVector TraceStart = GetMesh()->GetSocketLocation(DamageSourceBone);
-	const FVector TraceEnd = TraceStart + (GetActorForwardVector() * MeleeTraceDistance);
-
-	// check for pawn and world dynamic collision object types
-	FCollisionObjectQueryParams ObjectParams;
-	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
-	ObjectParams.AddObjectTypesToQuery(ECC_WorldDynamic);
-
-	// use a sphere shape for the sweep
-	FCollisionShape CollisionShape;
-	CollisionShape.SetSphere(MeleeTraceRadius);
-
-	// ignore self
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this);
-
-	if (GetWorld()->SweepMultiByObjectType(OutHits, TraceStart, TraceEnd, FQuat::Identity, ObjectParams, CollisionShape, QueryParams))
-	{
-		// iterate over each object hit
-		for (const FHitResult& CurrentHit : OutHits)
-		{
-			// check if we've hit a damageable actor
-			ICombatDamageable* Damageable = Cast<ICombatDamageable>(CurrentHit.GetActor());
-
-			if (Damageable)
-			{
-				// knock upwards and away from the impact normal
-				const FVector Impulse = (CurrentHit.ImpactNormal * -MeleeKnockbackImpulse) + (FVector::UpVector * MeleeLaunchImpulse);
-
-				// pass the damage event to the actor
-				Damageable->ApplyDamage(MeleeDamage, this, CurrentHit.ImpactPoint, Impulse);
-
-				// call the BP handler to play effects, etc.
-//				DealtDamage(MeleeDamage, CurrentHit.ImpactPoint);
-			}
-		}
-	}
+	//Ability 
+	//Attack Trace
+	FGameplayEventData Payload;
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, AttackTraceTag, Payload);
 }
 
 //AnimNotify가 실행 시켜줌(ICombatAttacker)
@@ -294,4 +261,9 @@ void ATPSCharacter::CheckCombo()
 
 void ATPSCharacter::CheckChargedAttack()
 {
+}
+
+UAbilitySystemComponent* ATPSCharacter::GetAbilitySystemComponent() const
+{
+	return ASC;
 }

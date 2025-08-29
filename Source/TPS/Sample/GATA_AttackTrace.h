@@ -13,5 +13,14 @@ UCLASS()
 class TPS_API AGATA_AttackTrace : public AGameplayAbilityTargetActor
 {
 	GENERATED_BODY()
+
+public:
+	AGATA_AttackTrace();
+
+	
+	virtual void StartTargeting(UGameplayAbility* Ability) override;
+
+	virtual void ConfirmTargetingAndContinue() override;
+
 	
 };

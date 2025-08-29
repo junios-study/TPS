@@ -16,6 +16,8 @@ void UGA_AttackTrace::ActivateAbility(const FGameplayAbilitySpecHandle Handle, c
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
+	UE_LOG(LogTemp, Display, TEXT("UGA_AttackTrace::ActivateAbility"));
+
 	//Create Task
 	UAT_AttackTrace* NewTask = UAT_AttackTrace::CreateTask(this, AGATA_AttackTrace::StaticClass());
 	//NewTask->타격 판정 완료가 되면 알려주는 콜백

@@ -7,6 +7,8 @@
 #include "CombatAttacker.h"
 #include "CombatDamageable.h"
 #include "Logging/LogMacros.h"
+#include "GameplayTagContainer.h"
+#include "AbilitySystemInterface.h"
 #include "TPSCharacter.generated.h"
 
 class USpringArmComponent;
@@ -23,7 +25,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
  *  Implements a controllable orbiting camera
  */
 UCLASS(abstract)
-class ATPSCharacter : public ACharacter, public ICombatAttacker
+class ATPSCharacter : public ACharacter, public ICombatAttacker, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -178,5 +180,13 @@ public:
 
 	/** Index of the current stage of the melee attack combo */
 	int32 ComboCount = 0;
+
+	FName DamageSourceBone;
+
+	UPROPERTY(EditAnywhere, Category="Ability|AttackTrace")
+	FGameplayTag AttackTraceTag;
+
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+
 };
 
