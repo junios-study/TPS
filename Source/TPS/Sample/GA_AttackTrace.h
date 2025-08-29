@@ -6,6 +6,8 @@
 #include "Abilities/GameplayAbility.h"
 #include "GA_AttackTrace.generated.h"
 
+
+
 /**
  * 
  */
@@ -18,5 +20,8 @@ public:
 	UGA_AttackTrace();
 
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
-	
+
+
+	UFUNCTION()
+	void OnCompleted(const FGameplayAbilityTargetDataHandle& TargetDataHandle);
 };

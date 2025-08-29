@@ -6,6 +6,8 @@
 #include "Abilities/Tasks/AbilityTask.h"
 #include "AT_AttackTrace.generated.h"
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAbilityTaskTargetData, const FGameplayAbilityTargetDataHandle&, TargetDataHandle);
 /**
  * 
  */
@@ -25,4 +27,10 @@ public:
 
 	TSubclassOf<class AGATA_AttackTrace> TargetActorClass;
 
+	UFUNCTION()
+	void CompleteTargetDataReady(const FGameplayAbilityTargetDataHandle& Handle);
+
+	UPROPERTY(BlueprintAssignable)
+	FAbilityTaskTargetData OnCompleted;
+	
 };
