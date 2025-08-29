@@ -2,6 +2,7 @@
 
 
 #include "Sample/AT_AttackTrace.h"
+#include "GATA_AttackTrace.h"
 
 UAT_AttackTrace::UAT_AttackTrace()
 {
@@ -15,7 +16,7 @@ void UAT_AttackTrace::OnDestroy(bool bInOwnerFinished)
 {
 }
 
-UAT_AttackTrace* UAT_AttackTrace::CreateTask(UGameplayAbility* OwingAbility, TSubclassOf<class UGATA_AttackTrace> TargetActorClass)
+UAT_AttackTrace* UAT_AttackTrace::CreateTask(UGameplayAbility* OwingAbility, TSubclassOf<class AGATA_AttackTrace> TargetActorClass)
 {
     UAT_AttackTrace* NewTask = NewAbilityTask<UAT_AttackTrace>(OwingAbility);
     NewTask->TargetActorClass = TargetActorClass;
